@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
   Code2,
@@ -10,7 +8,6 @@ import {
   Download,
   Loader2,
   Sparkles,
-  Terminal,
 } from "lucide-react";
 import { addHistoryItem } from "@/lib/history";
 
@@ -25,341 +22,6 @@ const languages: { id: Language; label: string; icon: string }[] = [
   { id: "bash", label: "Bash", icon: "$" },
 ];
 
-type SnippetType = {
-  id: string;
-  label: string;
-  desc: string;
-  languages: Language[];
-};
-
-const snippetTypes: SnippetType[] = [
-  { id: "function", label: "Fonksiyon", desc: "Yeniden kullanılabilir fonksiyon şablonu", languages: ["javascript", "python"] },
-  { id: "loop", label: "Döngü", desc: "For/while döngüsü örneği", languages: ["javascript", "python", "bash"] },
-  { id: "array", label: "Dizi İşlemi", desc: "Map, filter, reduce örnekleri", languages: ["javascript", "python"] },
-  { id: "fetch", label: "API İsteği", desc: "HTTP GET/POST isteği", languages: ["javascript", "python"] },
-  { id: "form", label: "Form", desc: "HTML form yapısı", languages: ["html", "css"] },
-  { id: "layout", label: "Flex Layout", desc: "CSS Flexbox düzeni", languages: ["css"] },
-  { id: "select", label: "SELECT Sorgusu", desc: "Veritabanı sorgu örnekleri", languages: ["sql"] },
-  { id: "script", label: "Shell Script", desc: "Bash betik örneği", languages: ["bash"] },
-];
-
-function generateCode(lang: Language, typeId: string, topic: string): { code: string; explanation: string } {
-  const t = topic.trim() || "örnek";
-  switch (typeId) {
-    case "function":
-      if (lang === "javascript") {
-        return {
-          code: `// ${t} için fonksiyon
-function process${capitalize(t)}(input) {
-  if (!input) {
-    throw new Error("Girdi boş olamaz");
-  }
-  const result = input;
-  return result;
-}
-
-// Kullanım:
-const output = process${capitalize(t)}("test verisi");
-console.log(output);`,
-          explanation: `${t} işlemek için bir JavaScript fonksiyonu. Hata kontrolü içerir ve bir değer döndürür.`,
-        };
-      }
-      return {
-        code: `# ${t} için fonksiyon
-def process_${snakeCase(t)}(input):
-    if not input:
-        raise ValueError("Girdi boş olamaz")
-    result = input
-    return result
-
-# Kullanım:
-output = process_${snakeCase(t)}("test verisi")
-print(output)`,
-        explanation: `${t} işlemek için bir Python fonksiyonu. Hata kontrolü içerir ve bir değer döndürür.`,
-      };
-
-    case "loop":
-      if (lang === "javascript") {
-        return {
-          code: `// ${t} için döngü örneği
-const items = ["a", "b", "c", "d"];
-
-// For döngüsü
-for (let i = 0; i < items.length; i++) {
-  console.log(\`Öğe \${i}: \${items[i]}\`);
-}
-
-// For...of döngüsü
-for (const item of items) {
-  console.log(item);
-}
-
-// While döngüsü
-let count = 0;
-while (count < items.length) {
-  console.log(\`Sayım: \${count}\`);
-  count++;
-}`,
-          explanation: `${t} için üç farklı döngü türü: klasik for, for...of ve while.`,
-        };
-      }
-      if (lang === "python") {
-        return {
-          code: `# ${t} için döngü örneği
-items = ["a", "b", "c", "d"]
-
-# For döngüsü
-for i, item in enumerate(items):
-    print(f"Öğe {i}: {item}")
-
-# While döngüsü
-count = 0
-while count < len(items):
-    print(f"Sayım: {count}")
-    count += 1`,
-          explanation: `${t} için Python döngü örnekleri: enumerate ile for ve while.`,
-        };
-      }
-      return {
-        code: `#!/bin/bash
-# ${t} için bash döngü
-items=("a" "b" "c" "d")
-
-for item in "\${items[@]}"; do
-    echo "Öğe: $item"
-done
-
-count=0
-while [ $count -lt \${#items[@]} ]; do
-    echo "Sayım: $count"
-    ((count++))
-done`,
-        explanation: `${t} için bash döngü örnekleri: for ve while.`,
-      };
-
-    case "array":
-      if (lang === "javascript") {
-        return {
-          code: `// ${t} için dizi işlemleri
-const data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-// map: her elemanı dönüştür
-const doubled = data.map(n => n * 2);
-
-// filter: koşula uyanları seç
-const evens = data.filter(n => n % 2 === 0);
-
-// reduce: tek bir değere indir
-const sum = data.reduce((acc, n) => acc + n, 0);
-
-// find: ilk eşleşen eleman
-const firstBig = data.find(n => n > 5);
-
-console.log({ doubled, evens, sum, firstBig });`,
-          explanation: `${t} için JavaScript dizi metotları: map, filter, reduce ve find.`,
-        };
-      }
-      return {
-        code: `# ${t} için liste işlemleri
-data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
-# map: her elemanı dönüştür
-doubled = list(map(lambda n: n * 2, data))
-
-# filter: koşula uyanları seç
-evens = list(filter(lambda n: n % 2 == 0, data))
-
-# reduce: tek bir değere indir
-from functools import reduce
-total = reduce(lambda acc, n: acc + n, data, 0)
-
-print({"doubled": doubled, "evens": evens, "sum": total})`,
-        explanation: `${t} için Python liste işlemleri: map, filter ve reduce.`,
-      };
-
-    case "fetch":
-      if (lang === "javascript") {
-        return {
-          code: `// ${t} için API isteği
-async function fetchData(url) {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(\`HTTP hatası: \${response.status}\`);
-    }
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("İstek başarısız:", error);
-    throw error;
-  }
-}
-
-// POST isteği
-async function postData(url, body) {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  return response.json();
-}
-
-// Kullanım:
-fetchData("https://api.example.com/${snakeCase(t)}")
-  .then(data => console.log(data));`,
-          explanation: `${t} için async/await ile GET ve POST istekleri. Hata yönetimi içerir.`,
-        };
-      }
-      return {
-        code: `# ${t} için API isteği
-import urllib.request
-import json
-
-def fetch_data(url):
-    try:
-        with urllib.request.urlopen(url) as response:
-            data = json.loads(response.read().decode())
-            return data
-    except Exception as e:
-        print(f"İstek başarısız: {e}")
-        raise
-
-# requests kütüphanesi ile (pip install requests)
-import requests
-
-def post_data(url, body):
-    response = requests.post(url, json=body)
-    response.raise_for_status()
-    return response.json()
-
-# Kullanım:
-data = fetch_data("https://api.example.com/${snakeCase(t)}")
-print(data)`,
-        explanation: `${t} için Python HTTP istekleri. urllib ve requests kütüphanesi örnekleri.`,
-      };
-
-    case "form":
-      return {
-        code: `<!-- ${t} için form -->
-<form id="${snakeCase(t)}-form" class="form-container">
-  <h2>${capitalize(t)}</h2>
-
-  <div class="form-group">
-    <label for="name">Ad:</label>
-    <input type="text" id="name" name="name" required placeholder="Adınızı girin" />
-  </div>
-
-  <div class="form-group">
-    <label for="email">E-posta:</label>
-    <input type="email" id="email" name="email" required placeholder="email@ornek.com" />
-  </div>
-
-  <div class="form-group">
-    <label for="message">Mesaj:</label>
-    <textarea id="message" name="message" rows="4" placeholder="Mesajınız"></textarea>
-  </div>
-
-  <button type="submit">Gönder</button>
-</form>`,
-        explanation: `${t} için erişilebilir bir HTML form yapısı. Etiketler, doğrulama ve placeholder içerir.`,
-      };
-
-    case "layout":
-      return {
-        code: `/* ${t} için Flexbox düzeni */
-.container {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.card {
-  flex: 1 1 300px;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
-  background: white;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-/* Responsive: mobilde tek sütun */
-@media (max-width: 640px) {
-  .row {
-    flex-direction: column;
-  }
-}`,
-        explanation: `${t} için CSS Flexbox düzeni. Responsive ve kart yapısı içerir.`,
-      };
-
-    case "select":
-      return {
-        code: `-- ${t} için SQL sorguları
-
--- Tüm kayıtları getir
-SELECT * FROM ${snakeCase(t)};
-
--- Belirli sütunları seç ve filtrele
-SELECT id, name, created_at
-FROM ${snakeCase(t)}
-WHERE status = 'active'
-ORDER BY created_at DESC
-LIMIT 10;
-
--- Gruplama ve sayım
-SELECT status, COUNT(*) as count
-FROM ${snakeCase(t)}
-GROUP BY status;
-
--- İki tabloyu birleştir (JOIN)
-SELECT t.id, t.name, c.category_name
-FROM ${snakeCase(t)} t
-LEFT JOIN categories c ON t.category_id = c.id
-WHERE t.status = 'active';`,
-        explanation: `${t} için SQL örnekleri: SELECT, WHERE, ORDER BY, GROUP BY ve JOIN.`,
-      };
-
-    case "script":
-      return {
-        code: `#!/bin/bash
-# ${t} için shell script
-
-set -e  # Hata durumunda dur
-
-# Değişkenler
-INPUT_DIR="./input"
-OUTPUT_DIR="./output"
-DATE=$(date +%Y%m%d)
-
-# Klasör oluştur
-mkdir -p "$OUTPUT_DIR"
-
-# Dosyaları işle
-for file in "$INPUT_DIR"/*; do
-  if [ -f "$file" ]; then
-    filename=$(basename "$file")
-    echo "İşleniyor: $filename"
-    cp "$file" "$OUTPUT_DIR/\${DATE}_$filename"
-  fi
-done
-
-echo "Tamamlandı: $(ls "$OUTPUT_DIR" | wc -l) dosya işlendi"`,
-        explanation: `${t} için bash script. Dosya işleme, değişkenler ve hata yönetimi içerir.`,
-      };
-
-    default:
-      return { code: "// Kod şablonu seçilmedi", explanation: "Bir şablon türü seçin." };
-  }
-}
-
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1).replace(/\s+/g, "");
 }
@@ -368,36 +30,174 @@ function snakeCase(s: string): string {
   return s.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
 }
 
+const langFullNames: Record<Language, string> = {
+  javascript: "JavaScript",
+  python: "Python",
+  html: "HTML",
+  css: "CSS",
+  sql: "SQL (PostgreSQL)",
+  bash: "Bash",
+};
+
+const POLLINATIONS_API_KEY = "sk_1zl0iJqBjHz8AzzHFp4anukql4ECFB0U";
+
+/**
+ * Calls Pollinations.ai text generation API.
+ * The free tier allows 1 request per 30 seconds per IP; on HTTP 402 we
+ * wait and retry once before giving up.
+ */
+async function fetchAiCode(prompt: string): Promise<string> {
+  const doFetch = async () => {
+    const res = await fetch("https://text.pollinations.ai/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${POLLINATIONS_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "openai-fast",
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+    if (res.status === 402) {
+      let wait = 32;
+      try {
+        const body = await res.json();
+        const m = body?.error?.message?.match(/Retry after (\d+)s/i);
+        if (m) wait = Math.min(Number(m[1]) + 2, 60);
+      } catch { /* ignore parse error */ }
+      const err = new Error(`RATE_LIMIT:${wait}`);
+      (err as any).retryAfter = wait;
+      throw err;
+    }
+    if (!res.ok) {
+      throw new Error(`AI API hatası: HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    const msg = data?.choices?.[0]?.message;
+    // openai-fast is a reasoning model: it may return plain content OR a
+    // tool_calls array. Handle both so we don't reject valid responses.
+    let text = msg?.content;
+    if (!text && Array.isArray(msg?.tool_calls) && msg.tool_calls.length > 0) {
+      text = msg.tool_calls[0]?.function?.arguments;
+    }
+    if (!text || text.trim().length < 5) {
+      throw new Error("AI API boş yanıt döndürdü");
+    }
+    return text.trim();
+  };
+
+  try {
+    return await doFetch();
+  } catch (err: any) {
+    if (err?.retryAfter) {
+      await new Promise((r) => setTimeout(r, err.retryAfter * 1000));
+      return await doFetch();
+    }
+    throw err;
+  }
+}
+
+/**
+ * Strips markdown code fences (```lang ... ```) from AI output and
+ * extracts just the code.
+ */
+function extractCode(raw: string): string {
+  // Try to extract from ```lang\n...\n``` blocks
+  const fenceMatch = raw.match(/```(?:[a-zA-Z]+)?\n([\s\S]*?)```/);
+  if (fenceMatch) return fenceMatch[1].trim();
+  // If no fence, return as-is but strip leading/trailing whitespace
+  return raw.trim();
+}
+
+/**
+ * Local fallback code generation (used if AI API fails).
+ */
+function generateFallbackCode(lang: Language, topic: string): { code: string; explanation: string } {
+  const t = topic.trim();
+
+  if (lang === "javascript") {
+    return {
+      code: `// ${t} için JavaScript örneği\nfunction ${snakeCase(t) || "run"}() {\n  console.log("${t} çalıştı");\n  return "${t}";\n}\n\n${snakeCase(t) || "run"}();`,
+      explanation: `"${t}" konusu için temel bir JavaScript fonksiyonu (AI bağlanamadı, yedek şablon kullanıldı).`,
+    };
+  }
+  if (lang === "python") {
+    return {
+      code: `# ${t} için Python örneği\ndef ${snakeCase(t) || "run"}():\n    print("${t} çalıştı")\n    return "${t}"\n\n${snakeCase(t) || "run"}()`,
+      explanation: `"${t}" konusu için temel bir Python fonksiyonu (AI bağlanamadı, yedek şablon kullanıldı).`,
+    };
+  }
+  if (lang === "html") {
+    return {
+      code: `<!DOCTYPE html>\n<html>\n  <head><title>${capitalize(t)}</title></head>\n  <body>\n    <h1>${capitalize(t)}</h1>\n    <p>${t} hakkında bir sayfa.</p>\n  </body>\n</html>`,
+      explanation: `"${t}" konulu basit bir HTML sayfası (AI bağlanamadı, yedek şablon kullanıldı).`,
+    };
+  }
+  if (lang === "css") {
+    return {
+      code: `/* ${t} için CSS */\n.container {\n  max-width: 800px;\n  margin: 0 auto;\n  padding: 20px;\n  font-family: sans-serif;\n}\n\n.${snakeCase(t) || "box"} {\n  background: #f5f5f5;\n  border-radius: 8px;\n  padding: 20px;\n}`,
+      explanation: `"${t}" için temel bir CSS düzeni (AI bağlanamadı, yedek şablon kullanıldı).`,
+    };
+  }
+  if (lang === "sql") {
+    return {
+      code: `-- ${t} için SQL\nCREATE TABLE ${snakeCase(t) || "items"} (\n  id SERIAL PRIMARY KEY,\n  name VARCHAR(100),\n  created_at TIMESTAMP DEFAULT NOW()\n);\n\nSELECT * FROM ${snakeCase(t) || "items"};`,
+      explanation: `"${t}" için bir tablo oluşturup veri çeken SQL (AI bağlanamadı, yedek şablon kullanıldı).`,
+    };
+  }
+  return {
+    code: `#!/bin/bash\n# ${t} için bash script\necho "${t} başlıyor..."\necho "Tamamlandı."`,
+    explanation: `"${t}" için temel bir bash betiği (AI bağlanamadı, yedek şablon kullanıldı).`,
+  };
+}
+
 type CodingResult = {
   code: string;
   explanation: string;
   language: Language;
   topic: string;
+  aiModel: string;
+  usedFallback: boolean;
 };
 
 export default function CodingAssistant() {
   const [topic, setTopic] = useState("");
   const [selectedLang, setSelectedLang] = useState<Language>("javascript");
-  const [selectedType, setSelectedType] = useState("function");
   const [result, setResult] = useState<CodingResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Filter snippet types by selected language
-  const availableTypes = snippetTypes.filter((t) => t.languages.includes(selectedLang));
-
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!topic.trim()) {
       toast.error("Lütfen bir konu girin.");
       return;
     }
-    // Ensure selected type is valid for the language
-    if (!availableTypes.some((t) => t.id === selectedType)) {
-      setSelectedType(availableTypes[0]?.id || "function");
-    }
     setIsProcessing(true);
-    setTimeout(() => {
-      const { code, explanation } = generateCode(selectedLang, selectedType, topic);
-      const codingResult: CodingResult = { code, explanation, language: selectedLang, topic: topic.trim() };
+
+    const prompt = `You are a code generator. Write working, clean code in ${langFullNames[selectedLang]} for this request: "${topic.trim()}". Return ONLY the code with no explanation, no markdown fences, no commentary. The code should be complete and ready to run.`;
+
+    try {
+      const rawAi = await fetchAiCode(prompt);
+      const code = extractCode(rawAi);
+
+      // Also get a short explanation
+      const explanationPrompt = `Write a one-sentence Turkish explanation (max 100 characters) of what this code does: "${topic.trim()}" in ${langFullNames[selectedLang]}. Reply with only the explanation, no code.`;
+      let explanation = `AI tarafından üretilen ${langFullNames[selectedLang]} kodu.`;
+      try {
+        const aiExplanation = await fetchAiCode(explanationPrompt);
+        explanation = aiExplanation.slice(0, 200);
+      } catch {
+        // keep default explanation
+      }
+
+      const codingResult: CodingResult = {
+        code,
+        explanation,
+        language: selectedLang,
+        topic: topic.trim(),
+        aiModel: "Pollinations.ai (openai-fast)",
+        usedFallback: false,
+      };
       setResult(codingResult);
       addHistoryItem({
         toolType: "coding",
@@ -408,8 +208,30 @@ export default function CodingAssistant() {
         }),
       });
       setIsProcessing(false);
-      toast.success("Kod şablonu oluşturuldu!");
-    }, 400);
+      toast.success("AI kodu oluşturuldu! ");
+    } catch (err) {
+      console.error("AI API error, falling back:", err);
+      const { code, explanation } = generateFallbackCode(selectedLang, topic);
+      const codingResult: CodingResult = {
+        code,
+        explanation,
+        language: selectedLang,
+        topic: topic.trim(),
+        aiModel: "Yedek şablon (AI bağlanamadı)",
+        usedFallback: true,
+      };
+      setResult(codingResult);
+      addHistoryItem({
+        toolType: "coding",
+        metadata: JSON.stringify({
+          language: selectedLang,
+          explanation,
+          code,
+        }),
+      });
+      setIsProcessing(false);
+      toast.warning("AI'ya ulaşılamadı, yedek şablon kullanıldı.");
+    }
   };
 
   const handleCopy = () => {
@@ -449,7 +271,7 @@ export default function CodingAssistant() {
           <div>
             <h1 className="text-2xl font-bold text-foreground">Kodlama Asistanı</h1>
             <p className="text-muted-foreground text-sm">
-              Konu ve dil seç — hazır kod şablonu anında oluşsun
+              Ne yapmak istediğini yaz, dil seç — AI gerçek kod üretsin
             </p>
           </div>
         </div>
@@ -469,14 +291,7 @@ export default function CodingAssistant() {
                     {languages.map((lang) => (
                       <button
                         key={lang.id}
-                        onClick={() => {
-                          setSelectedLang(lang.id);
-                          // Reset type to first available for this language
-                          const validTypes = snippetTypes.filter((t) => t.languages.includes(lang.id));
-                          if (validTypes.length > 0 && !validTypes.some((t) => t.id === selectedType)) {
-                            setSelectedType(validTypes[0].id);
-                          }
-                        }}
+                        onClick={() => setSelectedLang(lang.id)}
                         className={`flex items-center gap-2 p-2 rounded-lg border-2 transition-all ${
                           selectedLang === lang.id
                             ? "border-primary bg-primary/5"
@@ -492,43 +307,25 @@ export default function CodingAssistant() {
                   </div>
                 </div>
 
-                {/* Snippet Type */}
-                <div>
-                  <label className="text-sm font-medium text-foreground mb-2 block">Şablon Türü</label>
-                  <div className="space-y-1.5">
-                    {availableTypes.map((type) => (
-                      <button
-                        key={type.id}
-                        onClick={() => setSelectedType(type.id)}
-                        className={`w-full flex items-center justify-between p-2.5 rounded-lg border-2 transition-all text-left ${
-                          selectedType === type.id
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/40"
-                        }`}
-                      >
-                        <div>
-                          <span className="font-semibold text-sm text-foreground">{type.label}</span>
-                          <span className="text-xs text-muted-foreground block">{type.desc}</span>
-                        </div>
-                        <Terminal className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Topic */}
                 <div>
                   <label className="text-sm font-medium text-foreground mb-1.5 block">
-                    Konu / Açıklama
+                    Ne yapmak istiyorsun?
                   </label>
                   <input
                     type="text"
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
-                    placeholder="örn: kullanıcı listesi, veri filtreleme"
+                    placeholder="örn: hello world, sayaç, hesap makinesi, form"
                     className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                    maxLength={50}
+                    maxLength={100}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !isProcessing && topic.trim()) handleGenerate();
+                    }}
                   />
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    İpucu: İstediğin her şeyi yazabilirsin — AI kodu senin için üretir.
+                  </p>
                 </div>
 
                 <Button
@@ -539,15 +336,22 @@ export default function CodingAssistant() {
                   {isProcessing ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Oluşturuluyor...
+                      AI düşünüyor...
                     </>
                   ) : (
                     <>
                       <Sparkles className="w-4 h-4" />
-                      Kod Oluştur
+                      AI ile Kod Oluştur
                     </>
                   )}
                 </Button>
+
+                <div className="text-center">
+                  <span className="inline-flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full">
+                    <Sparkles className="w-3 h-3" />
+                    Ücretsiz AI (Pollinations.ai) — 30 sn'de 1 istek limiti
+                  </span>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -602,15 +406,26 @@ export default function CodingAssistant() {
                   </CardContent>
                 </Card>
 
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={handleCopy} className="gap-2">
-                    <Copy className="w-4 h-4" />
-                    Kopyala
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={handleDownload} className="gap-2">
-                    <Download className="w-4 h-4" />
-                    İndir
-                  </Button>
+                {/* AI model info */}
+                <div className="flex items-center justify-between text-xs">
+                  <span className={`px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 ${
+                    result.usedFallback
+                      ? "bg-amber-50 text-amber-700"
+                      : "bg-emerald-50 text-emerald-700"
+                  }`}>
+                    <Sparkles className="w-3 h-3" />
+                    {result.usedFallback ? "Yedek şablon (AI bağlanamadı)" : `AI: ${result.aiModel}`}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={handleCopy} className="gap-2">
+                      <Copy className="w-4 h-4" />
+                      Kopyala
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={handleDownload} className="gap-2">
+                      <Download className="w-4 h-4" />
+                      İndir
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -621,7 +436,7 @@ export default function CodingAssistant() {
                   </div>
                   <h3 className="font-semibold text-foreground mb-2">Kod Hazır Değil</h3>
                   <p className="text-muted-foreground text-sm max-w-xs">
-                    Dil seç, şablon türü belirle ve konu gir, ardından "Kod Oluştur" butonuna tıkla.
+                    Ne yapmak istediğini yaz (örn: "hello world"), dil seç ve "AI ile Kod Oluştur"a tıkla.
                   </p>
                 </CardContent>
               </Card>
